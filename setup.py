@@ -106,6 +106,8 @@ ext_modules.append(
             Path(this_dir) / "csrc" / "sm90",
             Path(this_dir) / "csrc" / "cutlass" / "include",
             Path(this_dir) / "csrc" / "cutlass" / "tools" / "util" / "include",
+            # workaround for cuda13
+            "/usr/local/cuda/include/cccl",
         ],
     )
 )
