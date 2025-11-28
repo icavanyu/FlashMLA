@@ -209,9 +209,9 @@ sparse_attn_fwd_kernel(__grid_constant__ const SparsePrefillParams params, __gri
     }
 
     if (thread0()) {
-        auto A = UMMA::Layout_MN_SW128_Atom<bf16>{};
+        auto A = UMMA::Layout_K_SW128_Atom<bf16>{};
         auto B = tile_to_shape(A, Shape<Int<B_H/2>, Int<64>>{}, Step<_1, _2>{});
-        auto B_21 = tile_to_shape(A, Shape<Int<B_H/2>, Int<64>>{}, Step<_2, _1>{});
+        auto B_21 = tile_to_shape(A, Shape<Int<B_H/2>, Int<64*2>>{}, Step<_2, _1>{});
         auto B2 = tile_to_shape(A, Shape<Int<B_H/2>, Int<64*2>>{}, Step<_1, _2>{});
         auto coalesceB = coalesce(B, Shape<_1, _1>{});
         auto coalesceB_12 = coalesce(B, Shape<_1, _2>{});
