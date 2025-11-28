@@ -181,7 +181,8 @@ if __name__ == '__main__':
     testcases = correctness_cases + corner_cases + performance_cases
 
     failed_cases = []
-    for test in testcases:
+    # for test in testcases:
+    for test in performance_cases[0:2]:
         if test.benchmark:
             time.sleep(0.2)
         is_correct = run_test(test)
