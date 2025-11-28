@@ -73,6 +73,10 @@ using SmemLayoutQTiles = decltype(coalesce(tile_to_shape(
     Shape<Int<B_H/2>, Int<64*NUM_TILES>>{},
     Step<_1, _2>{}
 ), Shape<_1, _1>{}));
+// SMemLayoutQTiles:
+// Sw<3,4,3> o smem_ptr[16b](unset) o (_64,_64):(_64,_1)
+// 
+// NUM_TILES=9 -> (_64, (_64, _9))
 
 template<int NUM_TILES>
 using SmemLayoutOTiles = decltype(coalesce(tile_to_shape(
@@ -81,6 +85,11 @@ using SmemLayoutOTiles = decltype(coalesce(tile_to_shape(
     Step<_1, _2>{}
 ), Shape<_1, _1>{}));
 
+// SMemLayoutOTiles:
+// Sw<3,4,3> o smem_ptr[16b](unset) o (_64,_64):(_64,_1)
+// 
+// SMemLayoutO:
+// Sw<3,4,3> o smem_ptr[16b](unset) o (_64,(_64,_8)):(_64,(_1,_4096))
 using SmemLayoutO = SmemLayoutOTiles<8>;
 
 template<int NUM_TILES>
@@ -90,12 +99,16 @@ using SmemLayoutKTiles = decltype(coalesce(tile_to_shape(
     Step<_1, _2>{}
 ), Shape<_1, _1>{}));
 
+// SMemLayoutV:
+// Sw<3,4,3> o smem_ptr[16b](unset) o ((_64,_4),_128):((_1,_8192),_64)
 using SmemLayoutV = decltype(coalesce(tile_to_shape(
     UMMA::Layout_MN_SW128_Atom<bf16>{},
     Shape<Int<256>, Int<B_TOPK>>{},
     Step<_2, _1>{}
 ), Shape<_1, _1>{}));
 
+// SMemLayoutSTiles<1>:
+// Sw<0,4,3> o smem_ptr[16b](unset) o (_64,(_8,_8)):(_8,(_1,_512))
 template<int NUM_TILES>
 using SmemLayoutSTiles = decltype(coalesce(tile_to_shape(
 	UMMA::Layout_K_INTER_Atom<bf16>{},
@@ -179,6 +192,7 @@ V(n-1)             scale(O) w.r.t P(n-1)
 template<typename TmaParams>
 __global__ void __launch_bounds__(NUM_THREADS, 1, 2)
 sparse_attn_fwd_kernel(__grid_constant__ const SparsePrefillParams params, __grid_constant__ const TmaParams tma_params) {
+#define IS_SM100 1
 #if IS_SM100
     const int cta_idx = blockIdx.x % 2;
     const int s_q_idx = blockIdx.x / 2;
@@ -196,6 +210,23 @@ sparse_attn_fwd_kernel(__grid_constant__ const SparsePrefillParams params, __gri
     }
 
     if (thread0()) {
+        auto A = UMMA::Layout_MN_SW128_Atom<bf16>{};
+        auto B = tile_to_shape(A, Shape<Int<B_H/2>, Int<64>>{}, Step<_1, _2>);
+        auto B_21 = tile_to_shape(A, Shape<Int<B_H/2>, Int<64>>{}, Step<_2, _1>);
+        auto B2 = tile_to_shape(A, Shape<Int<B_H/2>, Int<64*2>>{}, Step<_1, _2>);
+        auto coalesceB = coalesce(B, Shape<_1, _1>{});
+        auto coalesceB_12 = coalesce(B, Shape<_1, _2>{});
+        auto coalesceB21 = coalesce(B21, Shape<_1, _1>{});
+        print("------------------------\n");
+        print("A:\n"); print(A); print("\n");
+        print("B:\n"); print(B); print("\n");
+        print("B_21:\n"); print(B_21); print("\n");
+        print("B2:\n"); print(B2); print("\n");
+        print("coalesceB:\n"); print(coalesceB); print("\n");
+        print("coalesceB_12:\n"); print(coalesceB_12); print("\n");
+        print("coalesceB21:\n"); print(coalesceB21); print("\n");
+        print("------------------------\n");
+
         print("SMemLayoutQTiles:\n"); print(SmemLayoutQTiles<1>{}); print("\n");
         print("SMemLayoutKTiles:\n"); print(SmemLayoutKTiles<1>{}); print("\n");
         print("SMemLayoutSTiles:\n"); print(SmemLayoutSTiles<1>{}); print("\n");
