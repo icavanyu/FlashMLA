@@ -192,7 +192,6 @@ V(n-1)             scale(O) w.r.t P(n-1)
 template<typename TmaParams>
 __global__ void __launch_bounds__(NUM_THREADS, 1, 2)
 sparse_attn_fwd_kernel(__grid_constant__ const SparsePrefillParams params, __grid_constant__ const TmaParams tma_params) {
-#define IS_SM100 1
 #if IS_SM100
     const int cta_idx = blockIdx.x % 2;
     const int s_q_idx = blockIdx.x / 2;
