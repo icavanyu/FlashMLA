@@ -793,7 +793,7 @@ void run_fwd_kernel(const SparsePrefillParams& params) {
     print("tma_Q:\n"); print(tma_Q); print("\n");
     print("shape_O:\n"); print(shape_O); print("\n");
     print("tma_O:\n"); print(tma_O); print("\n");
-    print("tensor_map_kv:\n"); print(tensor_map_kv); print("\n");
+    // print("tensor_map_kv:\n"); print(tensor_map_kv); print("\n");
 
     constexpr size_t smem_size = sizeof(SharedMemoryPlan);
     CHECK_CUDA(cudaFuncSetAttribute(kernel, cudaFuncAttributeMaxDynamicSharedMemorySize, smem_size));
