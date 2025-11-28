@@ -22,7 +22,7 @@ class TestParam:
     d_v: int = 512
     seed: int = 0
     check_correctness: bool = True
-    benchmark: bool = True
+    benchmark: bool = False
 
 @dataclasses.dataclass
 class Testcase:

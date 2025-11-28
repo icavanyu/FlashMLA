@@ -9,12 +9,13 @@ from torch.utils.cpp_extension import (
     BuildExtension,
     CUDAExtension,
     IS_WINDOWS,
-    CUDA_HOME
+    CUDA_HOME,
 )
 
 
 def is_flag_set(flag: str) -> bool:
     return os.getenv(flag, "FALSE").lower() in ["true", "1", "y", "yes"]
+
 
 def get_features_args():
     features_args = []
@@ -22,21 +23,24 @@ def get_features_args():
         features_args.append("-DFLASH_MLA_DISABLE_FP16")
     return features_args
 
+
 def get_arch_flags():
     # Check NVCC Version
     # NOTE The "CUDA_HOME" here is not necessarily from the `CUDA_HOME` environment variable. For more details, see `torch/utils/cpp_extension.py`
     assert CUDA_HOME is not None, "PyTorch must be compiled with CUDA support"
     nvcc_version = subprocess.check_output(
-        [os.path.join(CUDA_HOME, "bin", "nvcc"), '--version'], stderr=subprocess.STDOUT
-    ).decode('utf-8')
-    nvcc_version_number = nvcc_version.split('release ')[1].split(',')[0].strip()
-    major, minor = map(int, nvcc_version_number.split('.'))
-    print(f'Compiling using NVCC {major}.{minor}')
+        [os.path.join(CUDA_HOME, "bin", "nvcc"), "--version"], stderr=subprocess.STDOUT
+    ).decode("utf-8")
+    nvcc_version_number = nvcc_version.split("release ")[1].split(",")[0].strip()
+    major, minor = map(int, nvcc_version_number.split("."))
+    print(f"Compiling using NVCC {major}.{minor}")
 
     DISABLE_SM100 = is_flag_set("FLASH_MLA_DISABLE_SM100")
     DISABLE_SM90 = is_flag_set("FLASH_MLA_DISABLE_SM90")
     if major < 12 or (major == 12 and minor <= 8):
-        assert DISABLE_SM100, "sm100 compilation for Flash MLA requires NVCC 12.9 or higher. Please set FLASH_MLA_DISABLE_SM100=1 to disable sm100 compilation, or update your environment."
+        assert (
+            DISABLE_SM100
+        ), "sm100 compilation for Flash MLA requires NVCC 12.9 or higher. Please set FLASH_MLA_DISABLE_SM100=1 to disable sm100 compilation, or update your environment."
 
     arch_flags = []
     if not DISABLE_SM100:
@@ -45,9 +49,11 @@ def get_arch_flags():
         arch_flags.extend(["-gencode", "arch=compute_90a,code=sm_90a"])
     return arch_flags
 
+
 def get_nvcc_thread_args():
     nvcc_threads = os.getenv("NVCC_THREADS") or "32"
     return ["--threads", nvcc_threads]
+
 
 subprocess.run(["git", "submodule", "update", "--init", "csrc/cutlass"])
 
@@ -89,8 +95,11 @@ ext_modules.append(
                 "--expt-relaxed-constexpr",
                 "--expt-extended-lambda",
                 "--use_fast_math",
-                "--ptxas-options=-v,--register-usage-level=10"
-            ] + get_features_args() + get_arch_flags() + get_nvcc_thread_args(),
+                "--ptxas-options=-v,--register-usage-level=10",
+            ]
+            + get_features_args()
+            + get_arch_flags()
+            + get_nvcc_thread_args(),
         },
         include_dirs=[
             Path(this_dir) / "csrc",
@@ -102,18 +111,18 @@ ext_modules.append(
 )
 
 try:
-    cmd = ['git', 'rev-parse', '--short', 'HEAD']
-    rev = '+' + subprocess.check_output(cmd).decode('ascii').rstrip()
+    cmd = ["git", "rev-parse", "--short", "HEAD"]
+    rev = "+" + subprocess.check_output(cmd).decode("ascii").rstrip()
 except Exception as _:
     now = datetime.now()
     date_time_str = now.strftime("%Y-%m-%d-%H-%M-%S")
-    rev = '+' + date_time_str
+    rev = "+" + date_time_str
 
 
 setup(
     name="flash_mla",
     version="1.0.0" + rev,
-    packages=find_packages(include=['flash_mla']),
+    packages=find_packages(include=["flash_mla"]),
     ext_modules=ext_modules,
     cmdclass={"build_ext": BuildExtension},
 )

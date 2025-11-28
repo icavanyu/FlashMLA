@@ -195,6 +195,20 @@ sparse_attn_fwd_kernel(__grid_constant__ const SparsePrefillParams params, __gri
         cute::prefetch_tma_descriptor(&(tma_params.tensor_map_kv));
     }
 
+    if (thread0()) {
+        print("SMemLayoutQTiles:\n"); print(SmemLayoutQTiles<1>{}); print("\n");
+        print("SMemLayoutKTiles:\n"); print(SmemLayoutKTiles<1>{}); print("\n");
+        print("SMemLayoutSTiles:\n"); print(SmemLayoutSTiles<1>{}); print("\n");
+        print("SMemLayoutOTiles:\n"); print(SmemLayoutOTiles<1>{}); print("\n");
+        print("SMemLayoutO:\n"); print(SmemLayoutO{}); print("\n");
+        print("SMemLayoutV:\n"); print(SmemLayoutV{}); print("\n");
+        print("------------------------\n");
+        print("TiledMMA_P_tQ:\n"); print(TiledMMA_P_tQ{}); print("\n");
+        print("TiledMMA_P_sQ:\n"); print(TiledMMA_P_sQ{}); print("\n");
+        print("TiledMMA_O:\n");    print(TiledMMA_O{});  print("\n");
+        print("------------------------\n");
+    } __syncthreads();
+
     // Define shared tensors
     extern __shared__ char wksp_buf[];
     SharedMemoryPlan &plan = *reinterpret_cast<SharedMemoryPlan*>(wksp_buf);
@@ -214,6 +228,15 @@ sparse_attn_fwd_kernel(__grid_constant__ const SparsePrefillParams params, __gri
     tP.data().get() = tmem_cols::p;
     tQr.data().get() = tmem_cols::q;
     tO.data().get() = tmem_cols::o;
+
+    if (thread0()) {
+        print("sQ_full:\n");  print(sQ_full);  print("\n");
+        print("tP:\n");       print(tP);       print("\n");
+        print("tQr:\n");      print(tQr);      print("\n");
+        print("tO:\n");       print(tO);       print("\n");
+        print("------------------------\n");
+        print("------------------------\n");
+    } __syncthreads();
 
     if (warp_idx == 0) {
         if (elect_one_sync()) {
@@ -765,6 +788,12 @@ void run_fwd_kernel(const SparsePrefillParams& params) {
         tensor_map_kv
     };
     auto kernel = &sparse_attn_fwd_kernel<decltype(tma_params)>;
+
+    print("shape_Q:\n"); print(shape_Q); print("\n");
+    print("tma_Q:\n"); print(tma_Q); print("\n");
+    print("shape_O:\n"); print(shape_O); print("\n");
+    print("tma_O:\n"); print(tma_O); print("\n");
+    print("tensor_map_kv:\n"); print(tensor_map_kv); print("\n");
 
     constexpr size_t smem_size = sizeof(SharedMemoryPlan);
     CHECK_CUDA(cudaFuncSetAttribute(kernel, cudaFuncAttributeMaxDynamicSharedMemorySize, smem_size));
