@@ -216,7 +216,8 @@ sparse_attn_fwd_kernel(__grid_constant__ const SparsePrefillParams params, __gri
         auto B2 = tile_to_shape(A, Shape<Int<B_H/2>, Int<64*2>>{}, Step<_1, _2>{});
         auto coalesceB = coalesce(B, Shape<_1, _1>{});
         auto coalesceB_12 = coalesce(B, Shape<_1, _2>{});
-        auto coalesceB21 = coalesce(B21, Shape<_1, _1>{});
+        auto coalesceB21 = coalesce(B_21, Shape<_1, _1>{});
+        auto coalesceB2 = coalesce(B2, Shape<_1, _1>{});
         print("------------------------\n");
         print("A:\n"); print(A); print("\n");
         print("B:\n"); print(B); print("\n");
@@ -225,6 +226,7 @@ sparse_attn_fwd_kernel(__grid_constant__ const SparsePrefillParams params, __gri
         print("coalesceB:\n"); print(coalesceB); print("\n");
         print("coalesceB_12:\n"); print(coalesceB_12); print("\n");
         print("coalesceB21:\n"); print(coalesceB21); print("\n");
+        print("coalesceB2:\n"); print(coalesceB2); print("\n");
         print("------------------------\n");
 
         print("SMemLayoutQTiles:\n"); print(SmemLayoutQTiles<1>{}); print("\n");
